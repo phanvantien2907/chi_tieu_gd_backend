@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, UseFilters } from '@nestjs/common';
+import { BadRequestException, CanActivate, ExecutionContext, Injectable, UnauthorizedException, UseFilters } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { Observable } from 'rxjs';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
@@ -20,7 +20,7 @@ export class GuardsGuard implements CanActivate {
       req['user'] = decoded;
        return true;
     } catch (err) {
-      throw new Error('Token không hợp lệ hoặc đã hết hạn');
+      throw new BadRequestException('Token không hợp lệ hoặc đã hết hạn');
     }
   }
 }

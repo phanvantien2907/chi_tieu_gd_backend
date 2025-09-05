@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Put, UseFilters } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, UseGuards, Req, UseFilters } from '@nestjs/common';
 import { MeService } from './me.service';
 import { GuardsGuard } from 'src/guard/guard.guard';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -41,7 +41,7 @@ export class MeController {
     return this.meService.updatePassword(ChangePasswordDTO, user.userId);
   }
 
-  @Put('delete/account')
+  @Patch('delete/account')
   @UseGuards(GuardsGuard)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Xoá tài khoản của tôi' })

@@ -6,6 +6,7 @@ import { LoginrDTO } from 'src/auth/dto/login.dto';
 import { RefreshTokenDTO } from 'src/auth/dto/refresh-token.dto';
 import { GuardsGuard } from 'src/guard/guard.guard';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
+import { RoleGuard } from 'src/guard/role.guard';
 
 
 @Controller('auth')
@@ -29,16 +30,18 @@ export class AuthController {
   @Post('refresh-token')
   @ApiBearerAuth('access-token')
   @UseGuards(GuardsGuard)
+  @UseGuards(new RoleGuard(['admin', 'client']))
   @ApiOperation({ summary: 'Làm mới token' })
   refreshtoken(@Body() rftokenDTO: RefreshTokenDTO, @Req() req: Request) {
   const user = req['user'];
-  return this.authService.refreshtoken(rftokenDTO.token);
+  return this.authService.refreshtoken(rftokenDTO.token, user.userRole);
   }
 
   @Post('logout')
   @ApiOperation({ summary: 'Đăng xuất khỏi hệ thống' })
   @ApiBearerAuth('access-token')
   @UseGuards(GuardsGuard)
+  @UseGuards(new RoleGuard(['admin', 'client']))
   logout(@Req() req: Request) {
   const user = req['user'];
   return this.authService.logout(user.userId);

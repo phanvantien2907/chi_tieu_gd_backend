@@ -37,18 +37,18 @@ export class AuthService {
 
   async login(@Body() loginData: LoginrDTO) {
     const exiting_users = await db.select(
-    {userId: users.userId, userEmail: users.userEmail, userHashedPassword: users.userHashedPassword, userIsDeleted: users.userIsDeleted})
+    {userId: users.userId, userEmail: users.userEmail, userHashedPassword: users.userHashedPassword, userIsDeleted: users.userIsDeleted, userRole: users.userRole})
     .from(users).where(eq(users.userEmail, loginData.user_email)).limit(1);
      if(exiting_users.length == 0) { throw new NotFoundException('Người dùng không tồn tại!') }
      const valid_password = await bcrypt.compare(loginData.user_hashed_password, exiting_users[0].userHashedPassword);
      if(!valid_password) { throw new UnauthorizedException('Mật khẩu không đúng'); }
     if(exiting_users[0].userIsDeleted == true) { throw new BadRequestException('Tài khoản đã bị khóa'); }
-    const token = await this.generatortoken(exiting_users[0].userId);
+    const token = await this.generatortoken(exiting_users[0].userId, exiting_users[0].userRole);
     return {msg: 'Đăng nhập thành công', ...token, status: HttpStatus.OK};
   }
 
-  async generatortoken(userId: string) {
-    const access_token = await this.jwtService.signAsync({ userId }, {expiresIn: '1h', secret: process.env.JWT_SECRET!});
+  async generatortoken(userId: string, userRole: string) {
+    const access_token = await this.jwtService.signAsync({ userId, userRole }, {expiresIn: '1h', secret: process.env.JWT_SECRET!});
     const refresh_token = uuidv4();
     await db.insert(refreshTokens).values({
       userId,
@@ -72,14 +72,16 @@ export class AuthService {
     return { msg: 'Đăng xuất thành công', status: HttpStatus.NO_CONTENT };
   }
 
-   async refreshtoken(rftoken: string) {
+   async refreshtoken(rftoken: string, userRole: string) {
     const token = await db.select().from(refreshTokens).where(and(
       eq(refreshTokens.token, rftoken),
       gt(refreshTokens.expDate, new Date().toISOString())
     )).limit(1);
-    if (!token) { throw new UnauthorizedException('Refresh token không hợp lệ hoặc đã hết hạn'); }
-    const access_token = await this.jwtService.signAsync({ userId: token[0].userId }, {expiresIn: '1h', secret: process.env.JWT_SECRET});
-    await this.generatortoken(token[0].userId);
+    if (token.length === 0) { throw new UnauthorizedException('Refresh token không hợp lệ hoặc đã hết hạn'); }
+    const [user] = await db.select({userId: users.userId, userRole: users.userRole}).from(users).where(eq(users.userId, token[0].userId)).limit(1);
+    if (!user) { throw new NotFoundException('Người dùng không tồn tại'); }
+    const access_token = await this.jwtService.signAsync({ userId: user.userId, userRole: user.userRole }, {expiresIn: '1h', secret: process.env.JWT_SECRET});
+    await this.generatortoken(user.userId, user.userRole);
     return { msg: 'Làm mới token thành công', access_token, status: HttpStatus.OK };
   }
 
