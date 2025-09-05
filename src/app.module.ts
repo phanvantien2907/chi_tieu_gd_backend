@@ -11,6 +11,8 @@ import { SettlementsModule } from './settlements/settlements.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { MeModule } from './me/me.module';
+import { ExeptionModule } from './exeption/exeption.module';
+import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
 
 @Module({
   imports: [UsersModule, WalletsModule, WalletMembersModule, CategoriesModule, ExpensesModule, ExpenseSplitsModule, SettlementsModule, AuthModule,
@@ -21,8 +23,12 @@ import { MeModule } from './me/me.module';
       signOptions: { expiresIn: '1h' },
     }),
     MeModule,
+    ExeptionModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, {
+    provide: 'APP_FILTER',
+    useClass: CatchEverythingFilter
+  }],
 })
 export class AppModule {}

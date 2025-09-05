@@ -1,8 +1,10 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, UseFilters } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { Observable } from 'rxjs';
+import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
 
 @Injectable()
+ @UseFilters(CatchEverythingFilter)
 export class GuardsGuard implements CanActivate {
   canActivate( context: ExecutionContext,): boolean | Promise<boolean> | Observable<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
@@ -10,7 +12,7 @@ export class GuardsGuard implements CanActivate {
     if(openRouter.includes(req.url)) { return true;}
     const authHeader = req.headers['authorization'] || req.headers['Authorization'] ;
     if(!authHeader || !authHeader.startsWith('Bearer')) {
-      throw new Error('Thiếu token');
+      throw new UnauthorizedException('Thiếu token, bạn chưa đăng nhập');
     }
     const token = authHeader.split(' ')[1];
     try {

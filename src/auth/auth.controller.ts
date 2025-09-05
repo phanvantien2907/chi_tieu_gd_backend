@@ -1,14 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, UseFilters } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RegisterDTO } from 'src/auth/dto/register.dto';
 import { LoginrDTO } from 'src/auth/dto/login.dto';
 import { RefreshTokenDTO } from 'src/auth/dto/refresh-token.dto';
 import { GuardsGuard } from 'src/guard/guard.guard';
+import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
 
 
 @Controller('auth')
 @ApiTags('Authentication')
+@UseFilters(CatchEverythingFilter)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
