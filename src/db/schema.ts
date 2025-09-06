@@ -26,6 +26,8 @@ export const wallets = pgTable("wallets", {
 	walletCreatedBy: uuid("wallet_created_by").notNull(),
 	walletCreatedAt: timestamp("wallet_created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	walletUpdatedAt: timestamp("wallet_updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	walletQrCode: text("wallet_qr_code"),
+	walletIsDeleted: boolean("wallet_is_deleted").default(false),
 }, (table) => [
 	foreignKey({
 			columns: [table.walletCreatedBy],
