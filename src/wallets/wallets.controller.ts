@@ -18,9 +18,6 @@ constructor(private readonly walletsService: WalletsService) {}
 
   @Post()
   @ApiOperation({ summary: 'Tạo ví mới', description: 'Tạo ví mới, mỗi ví tượng trưng cho một nhóm hoặc gia đình' })
-  @ApiCreatedResponse({ description: 'Ví được tạo thành công', type: CreateWalletDto })
-  @ApiBadRequestResponse({ description: 'Dữ liệu không hợp lệ hoặc tạo ví thất bại' })
- @ApiUnauthorizedResponse({ description: 'Người dùng chưa đăng nhập' })
   create(@Body() createWalletDto: CreateWalletDto) {
   return this.walletsService.create(createWalletDto);
   }

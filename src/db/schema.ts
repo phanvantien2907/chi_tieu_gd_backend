@@ -42,6 +42,7 @@ export const walletMembers = pgTable("wallet_members", {
 	memberUserId: uuid("member_user_id").notNull(),
 	memberRole: text("member_role").default('member').notNull(),
 	memberJoinedAt: timestamp("member_joined_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	memberIsDeleted: boolean("member_is_deleted").default(false),
 }, (table) => [
 	foreignKey({
 			columns: [table.memberUserId],

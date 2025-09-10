@@ -2,7 +2,7 @@ import { BadRequestException, HttpStatus, Injectable, NotFoundException } from '
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { db } from 'src/db/db';
-import { users, wallets } from 'src/db/schema';
+import { users, walletMembers, wallets } from 'src/db/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import * as QRCode from 'qrcode';
 import { isUuid } from 'uuidv4';
@@ -10,8 +10,9 @@ import { isUuid } from 'uuidv4';
 @Injectable()
 export class WalletsService {
  async create(createWalletDto: CreateWalletDto) {
-  const get_name_user = await this.getUserByName(createWalletDto.walletCreatedBy);
-    const [create_wallet] = await db.insert(wallets).values({
+  await db.transaction(async (tx) => {
+    const get_name_user = await this.getUserByName(createWalletDto.walletCreatedBy);
+    const [create_wallet] = await tx.insert(wallets).values({
       walletName: createWalletDto.walletName,
       walletDescription: createWalletDto.walletDescription,
       walletCurrency: createWalletDto.walletCurrency || 'VND',
@@ -28,14 +29,23 @@ export class WalletsService {
     });
     const invite_url = await this.getQrCode(create_wallet.walletId);
     const generator_qr_code = await QRCode.toDataURL(invite_url);
-    await db.update(wallets).set({
+    await tx.update(wallets).set({
       walletQrCode: generator_qr_code
     }).where(eq(wallets.walletId, create_wallet.walletId));
     if(!create_wallet) { throw new BadRequestException('Tạo ví thất bại, vui lòng thử lại!'); }
+    const [check_exist_admin] = await tx.select().from(walletMembers)
+    .where(and(eq(walletMembers.memberUserId, get_name_user.userId), eq(walletMembers.memberWalletId, create_wallet.walletId)));
+    if(check_exist_admin) { throw new BadRequestException('Người dùng này đã là thành viên của ví!'); }
+    await tx.insert(walletMembers).values({
+      memberUserId: get_name_user.userId,
+      memberWalletId: create_wallet.walletId,
+      memberRole: 'admin',
+    })
     return {status: HttpStatus.CREATED, msg: 'Tạo ví thành công', data: {
       ...create_wallet,
       QRCode: invite_url
     }}
+  })
   }
 
    async findAll() {
@@ -56,7 +66,7 @@ export class WalletsService {
       walletQrCode: await this.getQrCode(w.walletId),
     })))
     return {status: HttpStatus.OK, msg: `Lấy danh sách ${find_list_wallets.length} ví thành công`, data: response};
-  }
+   }
 
  async findOne(id: string) {
    const get_wallet_by_id = await this.getWalletById(id);
