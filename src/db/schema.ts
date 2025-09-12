@@ -60,9 +60,10 @@ export const walletMembers = pgTable("wallet_members", {
 export const categories = pgTable("categories", {
 	categoryId: uuid("category_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
 	categoryWalletId: uuid("category_wallet_id"),
-	categoryName: text("category_name").notNull(),
+	categoryName: text("category_name").default('null').notNull(),
 	categoryIcon: text("category_icon"),
 	categoryCreatedAt: timestamp("category_created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	categoryIsDeleted: boolean("category_is_deleted").default(false),
 }, (table) => [
 	foreignKey({
 			columns: [table.categoryWalletId],

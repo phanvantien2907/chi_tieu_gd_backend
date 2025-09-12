@@ -6,7 +6,7 @@ import * as QRCode from 'qrcode';
 import { Response } from 'express';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
 import { RoleGuard } from 'src/guard/role.guard';
-import { ApiBadRequestResponse, ApiBearerAuth, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
 @Controller('wallets')
 @ApiBearerAuth('access-token')

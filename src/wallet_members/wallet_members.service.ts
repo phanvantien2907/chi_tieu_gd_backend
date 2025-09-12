@@ -5,12 +5,14 @@ import { db } from 'src/db/db';
 import { users, walletMembers, wallets } from 'src/db/schema';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { uuid } from 'drizzle-orm/gel-core';
+import { findUserById } from 'src/utilities/find_user_by_id';
+import { findMembersByWalletId } from 'src/utilities/find_member_wallet_id';
 
 @Injectable()
 export class WalletMembersService {
  async create(createWalletMemberDto: CreateWalletMemberDto) {
-    const find_user = await this.findUserById(createWalletMemberDto.memberUserId);
-    const find_wallet = await this.findMembersByWalletId(createWalletMemberDto.memberWalletId);
+    const find_user = await findUserById(createWalletMemberDto.memberUserId);
+    const find_wallet = await findMembersByWalletId(createWalletMemberDto.memberWalletId);
     const [check_exist] = await db.select().from(walletMembers).where(and(eq(walletMembers.memberUserId, find_user.userId), eq(walletMembers.memberWalletId, find_wallet.walletId)));
     if(check_exist) { throw new BadRequestException('Người này đã là thành viên của ví!'); }
     const [check_exist_role] = await db.select({count: sql`COUNT(*)`}).from(walletMembers).where(eq(walletMembers.memberWalletId, find_wallet.walletId));
@@ -41,7 +43,7 @@ export class WalletMembersService {
     .innerJoin(users, eq(walletMembers.memberUserId, users.userId))
     .orderBy(desc(walletMembers.memberJoinedAt));
     if(find_member_wallets.length == 0) { throw new NotFoundException('Không thấy thành viên nào trong ví nào!'); }
-     const grouped_wallet = new Map<string, any>();
+    const grouped_wallet = new Map<string, any>();
      for (const item of find_member_wallets) {
       if (!grouped_wallet.has(item.walletName)) {
         grouped_wallet.set(item.walletName, {
@@ -72,8 +74,8 @@ export class WalletMembersService {
   async updateRole(memberId: string, updateWalletMemberDto: UpdateWalletMemberDto) {
     const current_member = await this.findMemberById(memberId);
     if(!current_member || current_member.memberRole !== 'admin') { throw new ForbiddenException('Bạn không có quyền thay đổi thành viên này!')}
-    const new_admin_user = await this.findUserById(updateWalletMemberDto.memberUserId!);
-    const wallet = await this.findMembersByWalletId(updateWalletMemberDto.memberWalletId!);
+    const new_admin_user = await findUserById(updateWalletMemberDto.memberUserId!);
+    const wallet = await findMembersByWalletId(updateWalletMemberDto.memberWalletId!);
     const [new_admin_member] = await db.select().from(walletMembers)
     .where(and(
       eq(walletMembers.memberUserId, new_admin_user.userId),
@@ -115,25 +117,6 @@ export class WalletMembersService {
      return {status: HttpStatus.NO_CONTENT, msg: `Xóa ${find_member_by_id.userName} ra khỏi ví ${find_member_by_id.walletName} thành công!`};
   }
 
-  async findMembersByWalletId(walletName: string) {
-    if(!walletName) { throw new BadRequestException('Tên của ví không hợp lệ'); }
-    const [find_wallet] = await db.select({
-      walletId: wallets.walletId,
-      walletName: wallets.walletName,
-    }).from(wallets).where(and(eq(wallets.walletName, walletName), eq(wallets.walletIsDeleted, false)));
-    if(!find_wallet) { throw new NotFoundException('Không tìm thấy ví!'); }
-    return find_wallet;
-  }
-
-  async findUserById(userFullName: string) {
-    if(!userFullName) { throw new BadRequestException('Tên người dùng không hợp lệ'); }
-    const [find_user] = await db.select({
-      userId: users.userId,
-      userName: users.userFullName,
-    }).from(users).where(and(eq(users.userFullName, userFullName), eq(users.userIsDeleted, false)));
-    if(!find_user) { throw new NotFoundException('Không tìm thấy người dùng!'); }
-    return find_user;
-  }
 
   async findMemberById(memberId: string) {
   if(!memberId || !uuid(memberId)) { throw new BadRequestException('ID của thành viên không hợp lệ'); }
