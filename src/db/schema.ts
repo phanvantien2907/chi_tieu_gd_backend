@@ -1,6 +1,8 @@
-import { pgTable, unique, uuid, text, timestamp, boolean, foreignKey, varchar, check, numeric, primaryKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, unique, uuid, text, timestamp, boolean, foreignKey, varchar, check, numeric, index, primaryKey, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
+export const transactionStatus = pgEnum("transaction_status", ['pending', 'completed', 'failed'])
+export const transactionType = pgEnum("transaction_type", ['deposit', 'withdrawal', 'refund'])
 export const userRoleType = pgEnum("user_role_type", ['admin', 'client'])
 
 
@@ -148,6 +150,54 @@ export const settlements = pgTable("settlements", {
 		}).onDelete("cascade"),
 	check("settlements_check", sql`settlement_payer_id <> settlement_receiver_id`),
 	check("settlements_settlement_amount_check", sql`settlement_amount > (0)::numeric`),
+]);
+
+export const walletTransactions = pgTable("wallet_transactions", {
+	transactionId: uuid("transaction_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	transactionWalletId: uuid("transaction_wallet_id").notNull(),
+	transactionUserId: uuid("transaction_user_id").notNull(),
+	transactionAmount: numeric("transaction_amount", { precision: 15, scale:  2 }).notNull(),
+	transactionType: transactionType("transaction_type").notNull(),
+	transactionStatus: transactionStatus("transaction_status").default('pending').notNull(),
+	transactionProvider: text("transaction_provider"),
+	transactionReference: text("transaction_reference"),
+	transactionNotes: text("transaction_notes"),
+	transactionCreatedAt: timestamp("transaction_created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	transactionUpdatedAt: timestamp("transaction_updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("idx_wallet_transactions_user_id").using("btree", table.transactionUserId.asc().nullsLast().op("uuid_ops")),
+	index("idx_wallet_transactions_wallet_id").using("btree", table.transactionWalletId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.transactionUserId],
+			foreignColumns: [users.userId],
+			name: "wallet_transactions_transaction_user_id_fkey"
+		}),
+	foreignKey({
+			columns: [table.transactionWalletId],
+			foreignColumns: [wallets.walletId],
+			name: "wallet_transactions_transaction_wallet_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const walletBalances = pgTable("wallet_balances", {
+	balanceId: uuid("balance_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	balanceWalletId: uuid("balance_wallet_id").notNull(),
+	balanceUserId: uuid("balance_user_id").notNull(),
+	balanceAmount: numeric("balance_amount", { precision: 15, scale:  2 }).default('0').notNull(),
+	balanceUpdatedAt: timestamp("balance_updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("idx_wallet_balances_wallet_user").using("btree", table.balanceWalletId.asc().nullsLast().op("uuid_ops"), table.balanceUserId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.balanceUserId],
+			foreignColumns: [users.userId],
+			name: "wallet_balances_balance_user_id_fkey"
+		}),
+	foreignKey({
+			columns: [table.balanceWalletId],
+			foreignColumns: [wallets.walletId],
+			name: "wallet_balances_balance_wallet_id_fkey"
+		}).onDelete("cascade"),
+	unique("wallet_balances_balance_wallet_id_balance_user_id_key").on(table.balanceWalletId, table.balanceUserId),
 ]);
 
 export const refreshTokens = pgTable("refresh_tokens", {

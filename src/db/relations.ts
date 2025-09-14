@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, wallets, walletMembers, categories, expenses, expenseSplits, settlements, refreshTokens } from "./schema";
+import { users, wallets, walletMembers, categories, expenses, expenseSplits, settlements, walletTransactions, walletBalances, refreshTokens } from "./schema";
 
 export const walletsRelations = relations(wallets, ({one, many}) => ({
 	user: one(users, {
@@ -10,12 +10,16 @@ export const walletsRelations = relations(wallets, ({one, many}) => ({
 	categories: many(categories),
 	expenses: many(expenses),
 	settlements: many(settlements),
+	walletTransactions: many(walletTransactions),
+	walletBalances: many(walletBalances),
 }));
 
 export const usersRelations = relations(users, ({many}) => ({
 	wallets: many(wallets),
 	walletMembers: many(walletMembers),
 	expenseSplits: many(expenseSplits),
+	walletTransactions: many(walletTransactions),
+	walletBalances: many(walletBalances),
 	refreshTokens: many(refreshTokens),
 }));
 
@@ -85,6 +89,28 @@ export const settlementsRelations = relations(settlements, ({one}) => ({
 	}),
 	wallet: one(wallets, {
 		fields: [settlements.settlementWalletId],
+		references: [wallets.walletId]
+	}),
+}));
+
+export const walletTransactionsRelations = relations(walletTransactions, ({one}) => ({
+	user: one(users, {
+		fields: [walletTransactions.transactionUserId],
+		references: [users.userId]
+	}),
+	wallet: one(wallets, {
+		fields: [walletTransactions.transactionWalletId],
+		references: [wallets.walletId]
+	}),
+}));
+
+export const walletBalancesRelations = relations(walletBalances, ({one}) => ({
+	user: one(users, {
+		fields: [walletBalances.balanceUserId],
+		references: [users.userId]
+	}),
+	wallet: one(wallets, {
+		fields: [walletBalances.balanceWalletId],
 		references: [wallets.walletId]
 	}),
 }));
