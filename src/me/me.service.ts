@@ -6,6 +6,7 @@ import { UpdateMeDto } from 'src/me/dto/update-me.dto';
 import * as bcrypt from 'bcrypt';
 import { ChangePasswordDTO } from 'src/me/dto/chage-password.dto';
 import { hashPassword } from 'src/utilities/hash_pasword';
+import { findUserByID } from 'src/utilities/find_user_by_id';
 
 @Injectable()
 export class MeService {
@@ -74,6 +75,11 @@ export class MeService {
   .where(eq(users.userId, find_user.userId));
   if(!delete_user) { throw new BadRequestException('Xoá tài khoản không thành công'); }
   return {status: HttpStatus.NO_CONTENT, msg: 'Xoá tài khoản thành công'};
+ }
+
+ async TotalBalance(userId: string) {
+  const find_user = await findUserByID(userId);
+  // const [total_balance] =
  }
 
  async findUserByIdWithPassword(userId: string) {

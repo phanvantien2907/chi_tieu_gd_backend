@@ -13,7 +13,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { MeModule } from './me/me.module';
 import { ExeptionModule } from './exeption/exeption.module';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
-import { BalancesModule } from './balances/balances.module';
 import { WalletTransactionsModule } from './wallet_transactions/wallet_transactions.module';
 
 @Module({
@@ -26,7 +25,6 @@ import { WalletTransactionsModule } from './wallet_transactions/wallet_transacti
     }),
     MeModule,
     ExeptionModule,
-    BalancesModule,
     WalletTransactionsModule,
   ],
   controllers: [AppController],

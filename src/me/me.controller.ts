@@ -1,12 +1,13 @@
 import { Controller, Get, Post, Body, Patch, UseGuards, Req, UseFilters } from '@nestjs/common';
 import { MeService } from './me.service';
 import { GuardsGuard } from 'src/guard/guard.guard';
-import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UpdateMeDto } from 'src/me/dto/update-me.dto';
 import { ChangePasswordDTO } from 'src/me/dto/chage-password.dto';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
 
 @Controller('me')
+@ApiTags("Me")
 export class MeController {
   constructor(private readonly meService: MeService) {}
 
@@ -19,6 +20,16 @@ export class MeController {
   me( @Req() req: Request) {
   const user = req['user'];
    return this.meService.me(user.userId);
+  }
+
+   @Get('total-balance')
+  @UseGuards(GuardsGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Số dư trong ví của tôi' })
+  @UseFilters(CatchEverythingFilter)
+  totalBalance(@Req() req: Request) {
+    const user = req['user'];
+    return this.meService.TotalBalance(user.userId);
   }
 
   @Patch()
@@ -50,4 +61,5 @@ export class MeController {
     const user = req['user'];
     return this.meService.deleteAccount(user.userId);
   }
+
 }

@@ -5,13 +5,13 @@ import { db } from 'src/db/db';
 import { users, walletMembers, wallets } from 'src/db/schema';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { uuid } from 'drizzle-orm/gel-core';
-import { findUserById } from 'src/utilities/find_user_by_id';
+import { findUserByID, findUserByName } from 'src/utilities/find_user_by_id';
 import { findMembersByWalletId } from 'src/utilities/find_member_wallet_id';
 
 @Injectable()
 export class WalletMembersService {
  async create(createWalletMemberDto: CreateWalletMemberDto) {
-    const find_user = await findUserById(createWalletMemberDto.memberUserId);
+    const find_user = await findUserByID(createWalletMemberDto.memberUserId);
     const find_wallet = await findMembersByWalletId(createWalletMemberDto.memberWalletId);
     const [check_exist] = await db.select().from(walletMembers).where(and(eq(walletMembers.memberUserId, find_user.userId), eq(walletMembers.memberWalletId, find_wallet.walletId)));
     if(check_exist) { throw new BadRequestException('Người này đã là thành viên của ví!'); }
@@ -28,7 +28,7 @@ export class WalletMembersService {
       memberRole: walletMembers.memberRole,
       memberJoinedAt: walletMembers.memberJoinedAt
     });
-    return ({status: HttpStatus.CREATED, msg: `Thêm ${find_user.userName} vào ví ${find_wallet.walletName} thành công`, data: create_member});
+    return ({status: HttpStatus.CREATED, msg: `Thêm ${find_user.userFullName} vào ví ${find_wallet.walletName} thành công`, data: create_member});
   }
 
   async findAll() {
@@ -74,7 +74,7 @@ export class WalletMembersService {
   async updateRole(memberId: string, updateWalletMemberDto: UpdateWalletMemberDto) {
     const current_member = await this.findMemberById(memberId);
     if(!current_member || current_member.memberRole !== 'admin') { throw new ForbiddenException('Bạn không có quyền thay đổi thành viên này!')}
-    const new_admin_user = await findUserById(updateWalletMemberDto.memberUserId!);
+    const new_admin_user = await findUserByID(updateWalletMemberDto.memberUserId!);
     const wallet = await findMembersByWalletId(updateWalletMemberDto.memberWalletId!);
     const [new_admin_member] = await db.select().from(walletMembers)
     .where(and(
@@ -100,7 +100,7 @@ export class WalletMembersService {
         role: current_member.memberRole,
       },
       new_admin: {
-        full_name: new_admin_user.userName,
+        full_name: new_admin_user.userFullName,
         role: update_admin.memberRole,
       }
     }}

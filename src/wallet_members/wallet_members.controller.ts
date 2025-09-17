@@ -6,7 +6,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
 
 @Controller('wallet-members')
- @ApiBearerAuth('access-token')
+@ApiBearerAuth('access-token')
  @ApiTags('Wallet Members')
  @UseFilters(CatchEverythingFilter)
 export class WalletMembersController {
