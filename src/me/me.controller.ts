@@ -1,62 +1,83 @@
-import { Controller, Get, Post, Body, Patch, UseGuards, Req, UseFilters } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, UseGuards, Req, UseFilters, Query } from '@nestjs/common';
 import { MeService } from './me.service';
 import { GuardsGuard } from 'src/guard/guard.guard';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { UpdateMeDto } from 'src/me/dto/update-me.dto';
 import { ChangePasswordDTO } from 'src/me/dto/chage-password.dto';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
+import { CreateExpenseDto } from 'src/expenses/dto/create-expense.dto';
+import { CreateWalletTransactionDto } from 'src/wallet_transactions/dto/create-wallet_transaction.dto';
+import { PaginationDto } from 'src/utilities/dtos/pagination.dto';
 
 @Controller('me')
 @ApiTags("Me")
+@UseGuards(GuardsGuard)
+@UseFilters(CatchEverythingFilter)
+@ApiBearerAuth('access-token')
 export class MeController {
   constructor(private readonly meService: MeService) {}
 
 
   @Get()
-  @UseGuards(GuardsGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Trang cá nhân của tôi' })
-  @UseFilters(CatchEverythingFilter)
   me( @Req() req: Request) {
   const user = req['user'];
    return this.meService.me(user.userId);
   }
 
+  @Get('get-expenses')
+  @ApiOperation({summary: 'Lấy tất cả các khoản chi tiêu của tôi' })
+  findAllExpense(@Req() req: Request) {
+    const user = req['user'];
+    return this.meService.findAllExpense(user.userId);
+  }
+
+  @Post('create-expense')
+  @ApiOperation({summary: 'Thanh toán khoản chi tiêu mới' })
+  createExpense(@Body() createExpenseDto: CreateExpenseDto, @Req() req: Request) {
+  const user = req['user'];
+  return this.meService.createExpense(createExpenseDto, user.userId);
+  }
+
    @Get('total-balance')
-  @UseGuards(GuardsGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Số dư trong ví của tôi' })
-  @UseFilters(CatchEverythingFilter)
   totalBalance(@Req() req: Request) {
     const user = req['user'];
     return this.meService.TotalBalance(user.userId);
   }
 
   @Patch()
-  @UseGuards(GuardsGuard)
-  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Cập nhật thông tin cá nhân' })
-  @UseFilters(CatchEverythingFilter)
   update(@Body() UpdateMeDto: UpdateMeDto, @Req() req: Request) {
     const user = req['user'];
     return this.meService.update(UpdateMeDto, user.userId);
   }
 
-  @Patch('password')
-  @UseGuards(GuardsGuard)
-  @ApiBearerAuth('access-token')
+  @Patch('change-password')
   @ApiOperation({ summary: 'Cập nhật mật khẩu' })
-  @UseFilters(CatchEverythingFilter)
   updatePassword(@Body() ChangePasswordDTO: ChangePasswordDTO, @Req() req: Request) {
     const user = req['user'];
     return this.meService.updatePassword(ChangePasswordDTO, user.userId);
   }
 
-  @Patch('delete/account')
-  @UseGuards(GuardsGuard)
-  @ApiBearerAuth('access-token')
+    @Post('create-deposit')
+    @ApiOperation({summary: 'Nạp tiền vào tài khoản', description: 'Khởi tạo yêu cầu nạp tiền vào ví, hệ thống sẽ trả về URL thanh toán để người dùng hoàn tất giao dịch'})
+    createtransaction(@Body() createWalletTransactionDto: CreateWalletTransactionDto, @Req() req: Request) {
+      const user = req['user'];
+      return this.meService.createTransaction(createWalletTransactionDto, user.userId);
+    }
+
+    @Get('history-transactions')
+    @ApiOperation({summary: 'Lấy lịch sử giao dịch trong ví', description: 'Lấy danh sách tất cả các giao dịch đã thực hiện trong ví của tôi'})
+    @ApiQuery({ name: 'page', required: false, type: Number, description: 'Số trang (mặc định: 1)' })
+    @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Số bản ghi mỗi trang (mặc định: 10)' })
+    findAll(@Query() paginationDto: PaginationDto, @Req() req: Request) {
+    const user = req['user'];
+     return this.meService.findAllTransactions(paginationDto, user.userId);
+    }
+
+  @Patch('delete-account')
   @ApiOperation({ summary: 'Xoá tài khoản của tôi' })
-  @UseFilters(CatchEverythingFilter)
   remove( @Req() req: Request) {
     const user = req['user'];
     return this.meService.deleteAccount(user.userId);

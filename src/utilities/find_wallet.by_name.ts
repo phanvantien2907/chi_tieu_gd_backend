@@ -4,7 +4,7 @@ import { db } from "src/db/db";
 import { users, wallets } from "src/db/schema";
 
  export async function findWalletByName(name: string) {
-    if(!name) { throw new BadRequestException('Tên không hợp lệ'); }
+    if(!name) { throw new BadRequestException('Tên ví không hợp lệ'); }
     const [get_wallet_by_name] = await db.select({
       walletId: wallets.walletId,
       userFullName: users.userFullName,

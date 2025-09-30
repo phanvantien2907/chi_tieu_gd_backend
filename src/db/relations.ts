@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, wallets, walletMembers, categories, expenses, expenseSplits, settlements, walletTransactions, walletBalances, refreshTokens } from "./schema";
+import { users, wallets, walletMembers, categories, expenses, expenseSplits, walletTransactions, walletBalances, settlements, refreshTokens } from "./schema";
 
 export const walletsRelations = relations(wallets, ({one, many}) => ({
 	user: one(users, {
@@ -9,9 +9,9 @@ export const walletsRelations = relations(wallets, ({one, many}) => ({
 	walletMembers: many(walletMembers),
 	categories: many(categories),
 	expenses: many(expenses),
-	settlements: many(settlements),
 	walletTransactions: many(walletTransactions),
 	walletBalances: many(walletBalances),
+	settlements: many(settlements),
 }));
 
 export const usersRelations = relations(users, ({many}) => ({
@@ -76,23 +76,6 @@ export const expenseSplitsRelations = relations(expenseSplits, ({one}) => ({
 	}),
 }));
 
-export const settlementsRelations = relations(settlements, ({one}) => ({
-	walletMember_settlementPayerId: one(walletMembers, {
-		fields: [settlements.settlementPayerId],
-		references: [walletMembers.memberId],
-		relationName: "settlements_settlementPayerId_walletMembers_memberId"
-	}),
-	walletMember_settlementReceiverId: one(walletMembers, {
-		fields: [settlements.settlementReceiverId],
-		references: [walletMembers.memberId],
-		relationName: "settlements_settlementReceiverId_walletMembers_memberId"
-	}),
-	wallet: one(wallets, {
-		fields: [settlements.settlementWalletId],
-		references: [wallets.walletId]
-	}),
-}));
-
 export const walletTransactionsRelations = relations(walletTransactions, ({one}) => ({
 	user: one(users, {
 		fields: [walletTransactions.transactionUserId],
@@ -111,6 +94,23 @@ export const walletBalancesRelations = relations(walletBalances, ({one}) => ({
 	}),
 	wallet: one(wallets, {
 		fields: [walletBalances.balanceWalletId],
+		references: [wallets.walletId]
+	}),
+}));
+
+export const settlementsRelations = relations(settlements, ({one}) => ({
+	walletMember_settlementPayerId: one(walletMembers, {
+		fields: [settlements.settlementPayerId],
+		references: [walletMembers.memberId],
+		relationName: "settlements_settlementPayerId_walletMembers_memberId"
+	}),
+	walletMember_settlementReceiverId: one(walletMembers, {
+		fields: [settlements.settlementReceiverId],
+		references: [walletMembers.memberId],
+		relationName: "settlements_settlementReceiverId_walletMembers_memberId"
+	}),
+	wallet: one(wallets, {
+		fields: [settlements.settlementWalletId],
 		references: [wallets.walletId]
 	}),
 }));

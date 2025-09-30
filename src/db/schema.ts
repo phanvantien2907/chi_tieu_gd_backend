@@ -125,33 +125,6 @@ export const expenseSplits = pgTable("expense_splits", {
 	check("expense_splits_split_amount_check", sql`split_amount > (0)::numeric`),
 ]);
 
-export const settlements = pgTable("settlements", {
-	settlementId: uuid("settlement_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
-	settlementWalletId: uuid("settlement_wallet_id").notNull(),
-	settlementPayerId: uuid("settlement_payer_id").notNull(),
-	settlementReceiverId: uuid("settlement_receiver_id").notNull(),
-	settlementAmount: numeric("settlement_amount", { precision: 15, scale:  2 }).notNull(),
-	settlementDate: timestamp("settlement_date", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.settlementPayerId],
-			foreignColumns: [walletMembers.memberId],
-			name: "settlements_settlement_payer_id_fkey"
-		}),
-	foreignKey({
-			columns: [table.settlementReceiverId],
-			foreignColumns: [walletMembers.memberId],
-			name: "settlements_settlement_receiver_id_fkey"
-		}),
-	foreignKey({
-			columns: [table.settlementWalletId],
-			foreignColumns: [wallets.walletId],
-			name: "settlements_settlement_wallet_id_fkey"
-		}).onDelete("cascade"),
-	check("settlements_check", sql`settlement_payer_id <> settlement_receiver_id`),
-	check("settlements_settlement_amount_check", sql`settlement_amount > (0)::numeric`),
-]);
-
 export const walletTransactions = pgTable("wallet_transactions", {
 	transactionId: uuid("transaction_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
 	transactionWalletId: uuid("transaction_wallet_id").notNull(),
@@ -198,6 +171,34 @@ export const walletBalances = pgTable("wallet_balances", {
 			name: "wallet_balances_balance_wallet_id_fkey"
 		}).onDelete("cascade"),
 	unique("wallet_balances_balance_wallet_id_balance_user_id_key").on(table.balanceWalletId, table.balanceUserId),
+]);
+
+export const settlements = pgTable("settlements", {
+	settlementId: uuid("settlement_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	settlementWalletId: uuid("settlement_wallet_id").notNull(),
+	settlementPayerId: uuid("settlement_payer_id").notNull(),
+	settlementReceiverId: uuid("settlement_receiver_id").notNull(),
+	settlementAmount: numeric("settlement_amount", { precision: 15, scale:  2 }).notNull(),
+	settlementDate: timestamp("settlement_date", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isPaid: boolean("is_paid").default(false),
+}, (table) => [
+	foreignKey({
+			columns: [table.settlementPayerId],
+			foreignColumns: [walletMembers.memberId],
+			name: "settlements_settlement_payer_id_fkey"
+		}),
+	foreignKey({
+			columns: [table.settlementReceiverId],
+			foreignColumns: [walletMembers.memberId],
+			name: "settlements_settlement_receiver_id_fkey"
+		}),
+	foreignKey({
+			columns: [table.settlementWalletId],
+			foreignColumns: [wallets.walletId],
+			name: "settlements_settlement_wallet_id_fkey"
+		}).onDelete("cascade"),
+	check("settlements_check", sql`settlement_payer_id <> settlement_receiver_id`),
+	check("settlements_settlement_amount_check", sql`settlement_amount > (0)::numeric`),
 ]);
 
 export const refreshTokens = pgTable("refresh_tokens", {
