@@ -1,42 +1,31 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseFilters, Req, UseGuards } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
-import { CreateExpenseDto } from './dto/create-expense.dto';
-import { UpdateExpenseDto } from './dto/update-expense.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
-import { GuardsGuard } from 'src/guard/guard.guard';
+import { RoleGuard } from 'src/guard/role.guard';
 
 @Controller('expenses')
 @ApiBearerAuth('access-token')
 @ApiTags('Expenses')
-@UseGuards(GuardsGuard)
+@UseGuards(new RoleGuard(['admin']))
 @UseFilters(CatchEverythingFilter)
 export class ExpensesController {
 constructor(private readonly expensesService: ExpensesService) {}
 
-  @Post()
-  create(@Body() createExpenseDto: CreateExpenseDto, @Req() req: Request) {
-    const user = req['user'];
-    return this.expensesService.create(createExpenseDto, user.userId);
-  }
-
   @Get()
-  findAll(@Req() req: Request) {
-    const user = req['user'];
-    return this.expensesService.findAll(user.userId);
+  @ApiOperation({ summary: 'Lấy tất cả chi tiêu', description: 'Lấy danh sách tất cả chi tiêu trong hệ thống' })
+  findAll() {
+    return this.expensesService.findAll();
   }
 
   @Get(':id')
+  @ApiOperation({summary: 'Lấy chi tiêu theo ID', description: 'Lấy thông tin chi tiết của một khoản chi tiêu theo ID'})
   findOne(@Param('id') id: string) {
     return this.expensesService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateExpenseDto: UpdateExpenseDto) {
-    return this.expensesService.update(id, updateExpenseDto);
-  }
-
   @Delete(':id')
+  @ApiOperation({summary: 'Xóa chi tiêu theo ID', description: 'Xóa một khoản chi tiêu theo ID'})
   remove(@Param('id') id: string) {
     return this.expensesService.remove(id);
   }

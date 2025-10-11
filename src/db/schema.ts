@@ -75,35 +75,6 @@ export const categories = pgTable("categories", {
 	unique("categories_category_wallet_id_category_name_key").on(table.categoryWalletId, table.categoryName),
 ]);
 
-export const expenses = pgTable("expenses", {
-	expenseId: uuid("expense_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
-	expenseWalletId: uuid("expense_wallet_id").notNull(),
-	expenseCategoryId: uuid("expense_category_id"),
-	expensePayerId: uuid("expense_payer_id").notNull(),
-	expenseDescription: text("expense_description").notNull(),
-	expenseAmount: numeric("expense_amount", { precision: 15, scale:  2 }).notNull(),
-	expenseDate: timestamp("expense_date", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	expenseCreatedAt: timestamp("expense_created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	expenseUpdatedAt: timestamp("expense_updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.expenseCategoryId],
-			foreignColumns: [categories.categoryId],
-			name: "expenses_expense_category_id_fkey"
-		}).onDelete("set null"),
-	foreignKey({
-			columns: [table.expensePayerId],
-			foreignColumns: [walletMembers.memberId],
-			name: "expenses_expense_payer_id_fkey"
-		}),
-	foreignKey({
-			columns: [table.expenseWalletId],
-			foreignColumns: [wallets.walletId],
-			name: "expenses_expense_wallet_id_fkey"
-		}).onDelete("cascade"),
-	check("expenses_expense_amount_check", sql`expense_amount > (0)::numeric`),
-]);
-
 export const expenseSplits = pgTable("expense_splits", {
 	splitId: uuid("split_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
 	splitExpenseId: uuid("split_expense_id").notNull(),
@@ -123,6 +94,36 @@ export const expenseSplits = pgTable("expense_splits", {
 		}),
 	unique("expense_splits_split_expense_id_split_user_id_key").on(table.splitExpenseId, table.splitUserId),
 	check("expense_splits_split_amount_check", sql`split_amount > (0)::numeric`),
+]);
+
+export const expenses = pgTable("expenses", {
+	expenseId: uuid("expense_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	expenseWalletId: uuid("expense_wallet_id").notNull(),
+	expenseCategoryId: uuid("expense_category_id"),
+	expensePayerId: uuid("expense_payer_id").notNull(),
+	expenseDescription: text("expense_description").notNull(),
+	expenseAmount: numeric("expense_amount", { precision: 15, scale:  2 }).notNull(),
+	expenseDate: timestamp("expense_date", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	expenseCreatedAt: timestamp("expense_created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	expenseUpdatedAt: timestamp("expense_updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	expenseIsDeleted: boolean("expense_is_deleted").default(false),
+}, (table) => [
+	foreignKey({
+			columns: [table.expenseCategoryId],
+			foreignColumns: [categories.categoryId],
+			name: "expenses_expense_category_id_fkey"
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.expensePayerId],
+			foreignColumns: [walletMembers.memberId],
+			name: "expenses_expense_payer_id_fkey"
+		}),
+	foreignKey({
+			columns: [table.expenseWalletId],
+			foreignColumns: [wallets.walletId],
+			name: "expenses_expense_wallet_id_fkey"
+		}).onDelete("cascade"),
+	check("expenses_expense_amount_check", sql`expense_amount > (0)::numeric`),
 ]);
 
 export const walletTransactions = pgTable("wallet_transactions", {

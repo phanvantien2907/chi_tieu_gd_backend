@@ -6,7 +6,7 @@ import { UpdateMeDto } from 'src/me/dto/update-me.dto';
 import { ChangePasswordDTO } from 'src/me/dto/chage-password.dto';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
 import { CreateExpenseDto } from 'src/expenses/dto/create-expense.dto';
-import { CreateWalletTransactionDto } from 'src/wallet_transactions/dto/create-wallet_transaction.dto';
+import { CreateWalletTransactionDto } from 'src/me/dto/create-wallet_transaction.dto';
 import { PaginationDto } from 'src/utilities/dtos/pagination.dto';
 
 @Controller('me')
@@ -76,11 +76,32 @@ export class MeController {
      return this.meService.findAllTransactions(paginationDto, user.userId);
     }
 
-  @Patch('delete-account')
-  @ApiOperation({ summary: 'Xoá tài khoản của tôi' })
-  remove( @Req() req: Request) {
-    const user = req['user'];
-    return this.meService.deleteAccount(user.userId);
-  }
+    @Get('list-debit')
+    @ApiOperation({ summary: 'Lấy danh sách khoản nợ của tôi' })
+    findListDebit(@Req() req: Request) {
+      const user = req['user'];
+      return this.meService.getListDebit(user.userId);
+    }
+
+    @Get('list-user-debit')
+    @ApiOperation({ summary: 'Lấy danh sách người đang nợ của tôi' })
+    findListUserDebit(@Req() req: Request) {
+      const user = req['user'];
+      return this.meService.getListUserDebit(user.userId);
+    }
+
+    @Patch('pay-debit')
+    @ApiOperation({ summary: 'Thanh toán khoản nợ của tôi' })
+    payDebit(@Req() req: Request) {
+      const user = req['user'];
+      return this.meService.payDebit(user.userId);
+    }
+
+    @Patch('delete-account')
+    @ApiOperation({ summary: 'Xoá tài khoản của tôi' })
+    remove( @Req() req: Request) {
+      const user = req['user'];
+      return this.meService.deleteAccount(user.userId);
+    }
 
 }

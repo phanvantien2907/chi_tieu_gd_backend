@@ -49,7 +49,19 @@ export const categoriesRelations = relations(categories, ({one, many}) => ({
 	expenses: many(expenses),
 }));
 
+export const expenseSplitsRelations = relations(expenseSplits, ({one}) => ({
+	expense: one(expenses, {
+		fields: [expenseSplits.splitExpenseId],
+		references: [expenses.expenseId]
+	}),
+	user: one(users, {
+		fields: [expenseSplits.splitUserId],
+		references: [users.userId]
+	}),
+}));
+
 export const expensesRelations = relations(expenses, ({one, many}) => ({
+	expenseSplits: many(expenseSplits),
 	category: one(categories, {
 		fields: [expenses.expenseCategoryId],
 		references: [categories.categoryId]
@@ -61,18 +73,6 @@ export const expensesRelations = relations(expenses, ({one, many}) => ({
 	wallet: one(wallets, {
 		fields: [expenses.expenseWalletId],
 		references: [wallets.walletId]
-	}),
-	expenseSplits: many(expenseSplits),
-}));
-
-export const expenseSplitsRelations = relations(expenseSplits, ({one}) => ({
-	expense: one(expenses, {
-		fields: [expenseSplits.splitExpenseId],
-		references: [expenses.expenseId]
-	}),
-	user: one(users, {
-		fields: [expenseSplits.splitUserId],
-		references: [users.userId]
 	}),
 }));
 

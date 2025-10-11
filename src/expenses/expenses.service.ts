@@ -1,137 +1,113 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { findWalletByName } from 'src/utilities/find_wallet.by_name';
-import { expenses, expenseSplits, settlements, walletMembers, users } from 'src/db/schema';
+import { expenses, expenseSplits, settlements, walletMembers, users, wallets, categories } from 'src/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { db } from 'src/db/db';
-import { findUserByName } from 'src/utilities/find_user_by_id';
+import { isUuid } from 'uuidv4';
+
 
 @Injectable()
 export class ExpensesService {
-  async create(createExpenseDto: CreateExpenseDto, userId: string) {
-    const find_wallet = await findWalletByName(createExpenseDto.expenseWalletId);
-    const [find_member] = await db.select({
-      memberId: walletMembers.memberId
-    }).from(walletMembers)
-    .where(and(
-      eq(walletMembers.memberWalletId, find_wallet.walletId),
-      eq(walletMembers.memberUserId, userId)
-    ));
-    if(!find_member) { throw new Error('Bạn không phải thành viên của ví này!'); }
-    await db.transaction(async (tx) => {
-      const [create_expense] = await tx.insert(expenses).values({
-        expenseWalletId: find_wallet.walletId,
-        expensePayerId: find_member.memberId,
-        expenseDescription: createExpenseDto.expenseDescription,
-        expenseAmount: createExpenseDto.expenseAmount.toString(),
-      }).returning();
-      if(!create_expense) { throw new Error('Tạo khoản chi tiêu thất bại!'); }
-      const total_people = createExpenseDto.expense_splits.length + 1;
-      const split_amount = Math.floor(createExpenseDto.expenseAmount / total_people);
-      await tx.insert(expenseSplits).values({
-        splitExpenseId: create_expense.expenseId,
-        splitUserId: userId,
-        splitAmount: split_amount.toString(),
-      });
-      for (const item of createExpenseDto.expense_splits) {
-        const find_user = await findUserByName(item.splitUserId);
-        await tx.insert(expenseSplits).values({
-          splitExpenseId: create_expense.expenseId,
-          splitUserId: find_user.userId,
-          splitAmount: split_amount.toString(),
-        });
-        const [find_debtor_member] = await tx.select({
-          memberId: walletMembers.memberId
-        }).from(walletMembers)
-        .where(and(
-          eq(walletMembers.memberWalletId, find_wallet.walletId),
-          eq(walletMembers.memberUserId, find_user.userId)
-        ));
-        if(!find_debtor_member) {
-          throw new Error(`${item.splitUserId} không phải thành viên của ví này!`);
-        }
-        await tx.insert(settlements).values({
-          settlementWalletId: find_wallet.walletId,
-          settlementPayerId: find_debtor_member.memberId,
-          settlementReceiverId: find_member.memberId,
-          settlementAmount: split_amount.toString(),
-        });
-      }
-    });
 
-    return {status: HttpStatus.CREATED, msg: `Thanh toán khoản ${createExpenseDto.expenseDescription} thành công!`}
-  }
-
- async findAll(userId: string) {
-    // Lấy memberId của user
-    const [userMember] = await db.select({
-      memberId: walletMembers.memberId
-    }).from(walletMembers)
-    .where(eq(walletMembers.memberUserId, userId));
-
-    if (!userMember) {
-      return { status: HttpStatus.OK, msg: 'Lấy danh sách chi tiêu thành công!', data: [] };
-    }
-
-    // Lấy danh sách expenses user đã tạo với người nợ
-    const expensesWithDebtors = await db.select({
+  async findAll() {
+    const get_all_expenses = await db.select({
       expenseId: expenses.expenseId,
+      expenseWalletId: expenses.expenseWalletId,
       expenseDescription: expenses.expenseDescription,
       expenseAmount: expenses.expenseAmount,
       expenseDate: expenses.expenseDate,
-      debtorName: users.userFullName,
-      debtorId: users.userId,
-      owedAmount: settlements.settlementAmount,
+      payerId: walletMembers.memberId,
     }).from(expenses)
-    .leftJoin(settlements, and(
-      eq(settlements.settlementReceiverId, userMember.memberId),
-      eq(settlements.settlementWalletId, expenses.expenseWalletId)
-    ))
-    .leftJoin(walletMembers, eq(settlements.settlementPayerId, walletMembers.memberId))
-    .leftJoin(users, eq(walletMembers.memberUserId, users.userId))
-    .where(eq(expenses.expensePayerId, userMember.memberId))
+    .innerJoin(walletMembers, eq(expenses.expensePayerId, walletMembers.memberId))
+    .where(eq(expenses.expenseIsDeleted, false))
     .orderBy(expenses.expenseDate);
-
-    // Group by expenseId
-    const groupedExpenses: any = {};
-    expensesWithDebtors.forEach(row => {
-      if (!groupedExpenses[row.expenseId]) {
-        groupedExpenses[row.expenseId] = {
-          expenseId: row.expenseId,
-          expenseDescription: row.expenseDescription,
-          expenseAmount: row.expenseAmount,
-          expenseDate: row.expenseDate,
-          debtors: []
-        };
-      }
-      if (row.debtorName) {
-        groupedExpenses[row.expenseId].debtors.push({
-          debtorName: row.debtorName,
-          debtorId: row.debtorId,
-          owedAmount: row.owedAmount
-        });
-      }
-    });
-
-    const result = Object.values(groupedExpenses);
+    if (get_all_expenses.length === 0) { throw new NotFoundException('Không tìm thấy chi tiêu nào!'); }
+    const result: any[] = [];
+    for (const item of get_all_expenses) {
+      const debtors = await db.select({
+        debtorName: users.userFullName,
+        debtorId: users.userId,
+        owedAmount: settlements.settlementAmount,
+      }).from(settlements)
+      .innerJoin(walletMembers, eq(settlements.settlementPayerId, walletMembers.memberId))
+      .innerJoin(users, eq(walletMembers.memberUserId, users.userId))
+      .where(and(
+        eq(settlements.settlementReceiverId, item.payerId),
+        eq(settlements.settlementWalletId, item.expenseWalletId)
+      ));
+      result.push({
+        expenseId: item.expenseId,
+        expenseDescription: item.expenseDescription,
+        expenseAmount: item.expenseAmount,
+        expenseDate: item.expenseDate,
+        debtors: debtors
+      });
+    }
 
     return {
       status: HttpStatus.OK,
-      msg: 'Lấy danh sách chi tiêu thành công!',
+      msg: `Lấy ${result.length} chi tiêu thành công!`,
       data: result
     };
   }
 
  async findOne(id: string) {
-    return `This action returns a #${id} expense`;
-  }
+    const find_expense_by_id = await this.findExpenseById(id);
+    return {
+      status: HttpStatus.OK,
+      msg: `Lấy khoản chi tiêu ${find_expense_by_id.expenseDescription} thành công!`,
+      data: find_expense_by_id
+     }; }
 
-  async update(id: string, updateExpenseDto: UpdateExpenseDto) {
-    return `This action updates a #${id} expense`;
-  }
 
   async remove(id: string) {
-    return `This action removes a #${id} expense`;
+    const find_expense_by_id = await this.findExpenseById(id);
+    const delete_expense = await db.update(expenses).set({
+      expenseIsDeleted: true,
+      expenseUpdatedAt: new Date().toISOString(),
+    }).where(eq(expenses.expenseId, find_expense_by_id.expenseId));
+    if(!delete_expense) { throw new BadRequestException('Xoá chi tiêu không thành công!'); }
+    return {status: HttpStatus.NO_CONTENT, msg: 'Xoá chi tiêu thành công!'};
+  }
+
+  async findExpenseById(id: string) {
+    if(!id || !isUuid(id)) { throw new NotFoundException('ID chi tiêu không hợp lệ!'); }
+    const find_expense_by_id = await db.select({
+      expenseId: expenses.expenseId,
+      expenseWalletId: expenses.expenseWalletId,
+      expenseDescription: expenses.expenseDescription,
+      expenseAmount: expenses.expenseAmount,
+      expenseDate: expenses.expenseDate,
+      payerId: walletMembers.memberId,
+    }).from(expenses)
+    .innerJoin(walletMembers, eq(expenses.expensePayerId, walletMembers.memberId))
+    .where(and(
+      eq(expenses.expenseId, id),
+      eq(expenses.expenseIsDeleted, false)
+    ))
+    .limit(1);
+    if (!find_expense_by_id.length) { throw new NotFoundException('Không tìm thấy chi tiêu nào!');  }
+    const expense = find_expense_by_id[0];
+    const debtors = await db.select({
+      debtorName: users.userFullName,
+      debtorId: users.userId,
+      owedAmount: settlements.settlementAmount,
+    }).from(settlements)
+    .innerJoin(walletMembers, eq(settlements.settlementPayerId, walletMembers.memberId))
+    .innerJoin(users, eq(walletMembers.memberUserId, users.userId))
+    .where(and(
+      eq(settlements.settlementReceiverId, expense.payerId),
+      eq(settlements.settlementWalletId, expense.expenseWalletId)
+    ));
+
+    return {
+      expenseId: expense.expenseId,
+      expenseDescription: expense.expenseDescription,
+      expenseAmount: expense.expenseAmount,
+      expenseDate: expense.expenseDate,
+      debtors: debtors
+    };
   }
 }

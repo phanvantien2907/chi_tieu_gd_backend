@@ -12,7 +12,7 @@ import { findWalletByName } from 'src/utilities/find_wallet.by_name';
 import { PaginationDto } from 'src/utilities/dtos/pagination.dto';
 import { DEFAULT_PAGE_SIZE } from 'src/utilities/constants';
 import { formatVND } from 'src/utilities/format_currency';
-import { CreateWalletTransactionDto } from 'src/wallet_transactions/dto/create-wallet_transaction.dto';
+import { CreateWalletTransactionDto } from 'src/me/dto/create-wallet_transaction.dto';
 import { generateTransactionReference } from 'src/utilities/generate_transaction';
 
 @Injectable()
@@ -318,5 +318,151 @@ export class MeService {
   if (!user) throw new NotFoundException('Người dùng không tồn tại');
   return user;
  }
+
+ async getListDebit(userId: string) {
+    const [userMember] = await db.select({
+      memberId: walletMembers.memberId
+    }).from(walletMembers)
+    .where(eq(walletMembers.memberUserId, userId));
+
+    if (!userMember) {
+      return {  status: HttpStatus.OK, msg: 'Lấy danh sách khoản nợ thành công!', data: [] }; }
+
+    const myDebts = await db.select({
+      settlementId: settlements.settlementId,
+      walletName: wallets.walletName,
+      receiverName: users.userFullName,
+      receiverId: users.userId,
+      settlementAmount: settlements.settlementAmount,
+      settlementDate: settlements.settlementDate,
+      expenseDescription: expenses.expenseDescription,
+      expenseDate: expenses.expenseDate
+    }).from(settlements)
+    .innerJoin(wallets, eq(settlements.settlementWalletId, wallets.walletId))
+    // JOIN để lấy thông tin người nhận tiền (receiver)
+    .innerJoin(walletMembers, eq(settlements.settlementReceiverId, walletMembers.memberId))
+    .innerJoin(users, eq(walletMembers.memberUserId, users.userId))
+    // LEFT JOIN để lấy thông tin expense gốc (optional)
+    .leftJoin(expenses, eq(settlements.settlementWalletId, expenses.expenseWalletId))
+    .where(and(
+      eq(settlements.settlementPayerId, userMember.memberId), // User là người nợ
+      eq(settlements.isPaid, false) // Chưa trả
+    ))
+    .orderBy(settlements.settlementDate);
+
+    if (myDebts.length === 0) {
+      return {
+        status: HttpStatus.OK,
+        msg: 'Tin vui! bạn không có khoản nợ nào!',
+      };
+    }
+
+    const result = myDebts.map(item => ({
+      settlementId: item.settlementId,
+      walletName: item.walletName,
+      creditor: {  // Người cho vay
+        name: item.receiverName,
+        userId: item.receiverId
+      },
+      debtAmount: formatVND(item.settlementAmount),
+      settlementDate: item.settlementDate,
+      description: item.expenseDescription,
+    }));
+
+    const totalDebt = myDebts.reduce((sum, debt) =>
+      sum + parseFloat(debt.settlementAmount), 0
+    );
+
+    return {
+      status: HttpStatus.OK,
+      msg: `Bạn đang nợ ${result.length} khoản, tổng ${formatVND(totalDebt)}!`,
+      data: {
+        debts: result,
+        summary: {
+          total_debts: result.length,
+          total_amount: formatVND(totalDebt),
+        }
+      }
+    };
+  }
+
+ async getListUserDebit(userId: string) {
+    // Lấy memberId của user
+    const [userMember] = await db.select({
+      memberId: walletMembers.memberId
+    }).from(walletMembers)
+    .where(eq(walletMembers.memberUserId, userId));
+
+    if (!userMember) {
+      return {
+        status: HttpStatus.OK,
+        msg: 'Lấy danh sách người tôi đang nợ thành công!',
+        data: []
+      };
+    }
+
+    // Query: Lấy danh sách người mà tôi đang nợ
+    // Logic: Người đã trả tiền thay tôi = Tôi là receiver, họ là payer = Tôi nợ họ
+    const peopleIOweMoney = await db.select({
+      settlementId: settlements.settlementId,
+      walletName: wallets.walletName,
+      creditorName: users.userFullName,  // Người đã trả thay tôi (tôi nợ họ)
+      creditorId: users.userId,
+      settlementAmount: settlements.settlementAmount,
+      settlementDate: settlements.settlementDate,
+      expenseDescription: expenses.expenseDescription
+    }).from(settlements)
+    .innerJoin(wallets, eq(settlements.settlementWalletId, wallets.walletId))
+    // JOIN để lấy thông tin người đã trả thay tôi (payer)
+    .innerJoin(walletMembers, eq(settlements.settlementPayerId, walletMembers.memberId))
+    .innerJoin(users, eq(walletMembers.memberUserId, users.userId))
+    // LEFT JOIN để lấy thông tin expense gốc
+    .leftJoin(expenses, eq(settlements.settlementWalletId, expenses.expenseWalletId))
+    .where(and(
+      eq(settlements.settlementReceiverId, userMember.memberId), // Tôi là người nhận tiền (được trả thay)
+      eq(settlements.isPaid, false) // Chưa trả
+    ))
+    .orderBy(settlements.settlementDate);
+
+    if (peopleIOweMoney.length === 0) {
+      return {
+        status: HttpStatus.OK,
+        msg: 'Bạn không nợ ai cả!',
+        data: []
+      };
+    }
+
+    // Format response - danh sách người tôi nợ
+    const result = peopleIOweMoney.map(debt => ({
+      settlementId: debt.settlementId,
+      walletName: debt.walletName,
+      creditor: {  // Người tôi nợ
+        name: debt.creditorName,
+        userId: debt.creditorId
+      },
+      debtAmount: formatVND(debt.settlementAmount),
+      settlementDate: debt.settlementDate,
+      description: debt.expenseDescription
+    }));
+
+    // Tính tổng tiền tôi đang nợ
+    const totalDebt = peopleIOweMoney.reduce((sum, debt) =>
+      sum + parseFloat(debt.settlementAmount), 0
+    );
+
+    return {
+      status: HttpStatus.OK,
+      msg: `Đang có ${result.length} người đang nợ!,tổng ${formatVND(totalDebt)}!`,
+      data: {
+        debtor: result, // Danh sách người nợ
+        summary: {
+          total_debtor: result.length,
+          total_debt_amount: formatVND(totalDebt)
+        }
+      }
+    };
+  }
+
+ async payDebit(userId: string) {}
 
 }
