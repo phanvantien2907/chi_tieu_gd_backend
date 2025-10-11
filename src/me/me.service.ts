@@ -463,6 +463,98 @@ export class MeService {
     };
   }
 
- async payDebit(userId: string) {}
+ async payDebit(userId: string, settlementId: string) {
+    return await db.transaction(async (tx) => {
+      try {
+        // Kiểm tra settlement có tồn tại không
+        const [settlement] = await tx.select({
+          settlementId: settlements.settlementId,
+          settlementPayerId: settlements.settlementPayerId,
+          settlementReceiverId: settlements.settlementReceiverId,
+          settlementAmount: settlements.settlementAmount,
+          isPaid: settlements.isPaid,
+          walletName: wallets.walletName
+        }).from(settlements)
+        .innerJoin(wallets, eq(settlements.settlementWalletId, wallets.walletId))
+        .where(eq(settlements.settlementId, settlementId));
+
+        if (!settlement) {
+          return {
+            status: HttpStatus.NOT_FOUND,
+            msg: 'Không tìm thấy khoản nợ này!',
+            data: null
+          };
+        }
+
+        // Kiểm tra đã thanh toán chưa
+        if (settlement.isPaid) {
+          return {
+            status: HttpStatus.BAD_REQUEST,
+            msg: 'Khoản nợ này đã được thanh toán rồi!',
+          };
+        }
+
+        // Lấy memberId của user hiện tại
+        const [userMember] = await tx.select({
+          memberId: walletMembers.memberId
+        }).from(walletMembers)
+        .where(eq(walletMembers.memberUserId, userId));
+
+        if (!userMember) {
+          return {
+            status: HttpStatus.NOT_FOUND,
+            msg: 'Không tìm thấy thông tin thành viên!'
+          };
+        }
+
+        // Kiểm tra user có phải là người nợ không
+        if (settlement.settlementPayerId !== userMember.memberId) {
+          return {
+            status: HttpStatus.FORBIDDEN,
+            msg: 'Bạn không có quyền thanh toán khoản nợ này!'
+          };
+        }
+
+        // Cập nhật trạng thái đã thanh toán
+        const [updatedSettlement] = await tx.update(settlements)
+          .set({
+            isPaid: true
+          })
+          .where(eq(settlements.settlementId, settlementId))
+          .returning({
+            settlementId: settlements.settlementId,
+            settlementAmount: settlements.settlementAmount,
+            isPaid: settlements.isPaid
+          });
+
+        // Lấy thông tin người nhận tiền (chủ nợ)
+        const [creditor] = await tx.select({
+          creditorName: users.userFullName,
+          creditorId: users.userId
+        }).from(walletMembers)
+        .innerJoin(users, eq(walletMembers.memberUserId, users.userId))
+        .where(eq(walletMembers.memberId, settlement.settlementReceiverId));
+
+        return {
+          status: HttpStatus.OK,
+          msg: `Thanh toán thành công ${formatVND(settlement.settlementAmount)} cho ${creditor?.creditorName}!`,
+          data: {
+            settlementId: updatedSettlement.settlementId,
+            amount: formatVND(settlement.settlementAmount),
+            walletName: settlement.walletName,
+            creditor: {
+              name: creditor?.creditorName,
+              userId: creditor?.creditorId
+            },
+            paidAt: new Date()
+          }
+        };
+
+      } catch (error) {
+        // Transaction sẽ tự động rollback
+        throw new Error(`Lỗi thanh toán: ${error.message}`);
+      }
+    });
+  }
 
 }

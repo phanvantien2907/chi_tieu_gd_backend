@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, UseGuards, Req, UseFilters, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, UseGuards, Req, UseFilters, Query, Param } from '@nestjs/common';
 import { MeService } from './me.service';
 import { GuardsGuard } from 'src/guard/guard.guard';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
@@ -90,11 +90,11 @@ export class MeController {
       return this.meService.getListUserDebit(user.userId);
     }
 
-    @Patch('pay-debit')
+    @Patch('pay-debit/:id')
     @ApiOperation({ summary: 'Thanh toán khoản nợ của tôi' })
-    payDebit(@Req() req: Request) {
+    payDebit(@Param('id') id: string, @Req() req: Request) {
       const user = req['user'];
-      return this.meService.payDebit(user.userId);
+      return this.meService.payDebit(user.userId, id);
     }
 
     @Patch('delete-account')
