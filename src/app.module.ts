@@ -13,6 +13,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MeModule } from './me/me.module';
 import { ExeptionModule } from './exeption/exeption.module';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [UsersModule, WalletsModule, WalletMembersModule, CategoriesModule, ExpensesModule, ExpenseSplitsModule, SettlementsModule, AuthModule,
@@ -24,11 +25,24 @@ import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
     }),
     MeModule,
     ExeptionModule,
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 5,
+        },
+      ],
+    }),
   ],
   controllers: [AppController],
   providers: [AppService, {
     provide: 'APP_FILTER',
     useClass: CatchEverythingFilter
-  }],
+  },
+  {
+    provide: 'APP_GUARD',
+    useClass: ThrottlerGuard
+  }
+],
 })
 export class AppModule {}

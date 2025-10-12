@@ -7,11 +7,13 @@ import { RefreshTokenDTO } from 'src/auth/dto/refresh-token.dto';
 import { GuardsGuard } from 'src/guard/guard.guard';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
 import { RoleGuard } from 'src/guard/role.guard';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 
 @Controller('auth')
 @ApiTags('Authentication')
 @UseFilters(CatchEverythingFilter)
+@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
