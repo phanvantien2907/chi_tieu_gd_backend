@@ -27,9 +27,22 @@ async function bootstrap() {
     }, 'access-token')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('/', app, documentFactory);
+  SwaggerModule.setup('api/docs', app, documentFactory);
+
+  // Add a simple health check endpoint at root
+  app.getHttpAdapter().get('/', (req, res) => {
+    res.json({
+      message: 'API quản lý chi tiêu ngân sách cho Nhóm/Gia đình',
+      version: '1.0',
+      docs: '/api/docs',
+      status: 'OK'
+    });
+  });
+
   await app.listen(process.env.PORT ?? 3000);
-  if(module.hot) {
+
+  // Only enable hot reload in development
+  if (process.env.NODE_ENV !== 'production' && module.hot) {
     module.hot.accept();
     module.hot.dispose(() => app.close());
   }

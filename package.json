@@ -5,6 +5,9 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "_moduleAliases": {
+    "src": "dist/src"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -20,9 +23,6 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:pull": "drizzle-kit pull"
   },
-  "_moduleAliases": {
-  "src": "./dist/src"
-},
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
