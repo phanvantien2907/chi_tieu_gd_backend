@@ -21,7 +21,7 @@
     "db:pull": "drizzle-kit pull"
   },
   "_moduleAliases": {
-  "src": "dist/src"
+  "src": "./dist/src"
 },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
