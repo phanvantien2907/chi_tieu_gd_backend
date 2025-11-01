@@ -4,6 +4,7 @@ import { CreateWalletMemberDto } from './dto/create-wallet_member.dto';
 import { UpdateWalletMemberDto } from './dto/update-wallet_member.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
+import { UpdateRoleWalletMemberDto } from 'src/wallet_members/dto/update_role_wallet_member.dto';
 
 @Controller('wallet-members')
 @ApiBearerAuth('access-token')
@@ -26,19 +27,25 @@ export class WalletMembersController {
 
   @Get(':id')
   @ApiOperation({summary: 'Lấy thông tin thành viên trong ví theo ID', description: 'Lấy thông tin chi tiết của một thành viên trong ví theo ID thành viên'})
-  findOne(@Param('id') id: string) {
-    return this.walletMembersService.findOne(id);
+  findOne(@Param('id') memberId: string) {
+    return this.walletMembersService.findOne(memberId);
+  }
+
+  @Get('member-join-wallets/:id')
+  @ApiOperation({summary: 'Lấy thông tin thành viên tham gia ví theo ID', description: 'Lấy thông tin chi tiết của một thành viên xem thành viên đó đang tham gia ví nào'})
+  findMemberJoinWallets(@Param('id') userId: string) {
+    return this.walletMembersService.findMemberWallet(userId);
   }
 
   @Patch('update/role/:id')
   @ApiOperation({summary: 'Cập nhật vai trò thành viên trong ví', description: 'Cập nhật vai trò của một thành viên trong ví, chỉ quản trị viên mới có quyền thực hiện hành động này'})
-  updateRole(@Param('id') id: string, @Body() updateWalletMemberDto: UpdateWalletMemberDto) {
-  return this.walletMembersService.updateRole(id, updateWalletMemberDto);
+  updateRole(@Param('id') memberId: string, @Body() updateRoleWalletMemberDto: UpdateRoleWalletMemberDto) {
+  return this.walletMembersService.updateRole(memberId, updateRoleWalletMemberDto);
   }
 
   @Patch('delete/:id')
   @ApiOperation({summary: 'Xóa thành viên khỏi ví', description: 'Xóa một thành viên khỏi ví, chỉ quản trị viên mới có quyền thực hiện hành động này'})
-  remove(@Param('id') id: string) {
-    return this.walletMembersService.remove(id);
+  remove(@Param('id') memberId: string) {
+    return this.walletMembersService.remove(memberId);
   }
 }

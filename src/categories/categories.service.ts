@@ -10,6 +10,7 @@ import { isUuid } from 'uuidv4';
 
 @Injectable()
 export class CategoriesService {
+
  async create(createCategoryDto: CreateCategoryDto) {
   const find_wallet = await findWalletByName(createCategoryDto.categoryWalletId);
   const [create_category] = await db.insert(categories).values({
