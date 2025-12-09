@@ -23,7 +23,7 @@ constructor(private readonly walletsService: WalletsService) {}
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách tất cả ví', description: 'Lấy danh sách tất cả ví trong hệ thống' })
+  @ApiOperation({ summary: 'Lấy danh sách tất cả ví 1', description: 'Lấy danh sách tất cả ví trong hệ thống' })
   @ApiOkResponse({ description: 'Lấy danh sách ví thành công' })
   findAll() {
     return this.walletsService.findAll();

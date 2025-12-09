@@ -40,17 +40,7 @@ export class CategoriesService {
     .where(eq(categories.categoryIsDeleted, false))
     .orderBy(desc(categories.categoryCreatedAt));
     if(find_list_categories.length == 0 ) { throw new NotFoundException('Không có danh mục nào!'); }
-    const grouped_wallet = new Map<string, any>();
-    for(const item of find_list_categories) {
-      if(!grouped_wallet.has(item.categoryWalletName)) {
-        grouped_wallet.set(item.categoryWalletName, {
-          categoryWalletName: item.categoryWalletName,
-          categories: [],
-        });
-      }
-      grouped_wallet.get(item.categoryWalletName).categories.push(item);
-    }
-    return {status: HttpStatus.OK, msg: `Lấy ra các danh mục thành công!`, data: [...grouped_wallet.values()]};
+    return {status: HttpStatus.OK, msg: `Lấy ra các danh mục thành công!`, data: find_list_categories};
   }
 
  async findOne(id: string) {

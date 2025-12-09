@@ -5,7 +5,7 @@ import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
 import { RoleGuard } from 'src/guard/role.guard';
 
 @Controller('expenses')
-@ApiBearerAuth('access-token')
+  @ApiBearerAuth('access-token')
 @ApiTags('Expenses')
 @UseGuards(new RoleGuard(['admin']))
 @UseFilters(CatchEverythingFilter)

@@ -26,29 +26,10 @@ export class SettlementsService {
     .orderBy(asc(settlements.settlementDate));
 
     if(settlements_with_payer.length === 0) {   throw new NotFoundException('Không có khoản nợ nào!'); }
-
-    const result: any[] = [];
-    for (const item of settlements_with_payer) {
-      const [receiver] = await db.select({
-        receiverName: users.userFullName
-      }).from(walletMembers)
-      .innerJoin(users, eq(walletMembers.memberUserId, users.userId))
-      .where(eq(walletMembers.memberId, item.receiverId));
-
-      result.push({
-        settlementId: item.settlementId,
-        walletName: item.walletName,
-        payerName: item.payerName,
-        receiverName: receiver?.receiverName || 'Unknown',
-        settlementAmount: item.settlementAmount,
-        settlementDate: item.settlementDate
-      });
-    }
-
     return {
       status: 200,
-      msg: `Lấy ${result.length} khoản nợ thành công!`,
-      data: result
+      msg: `Lấy ${settlements_with_payer.length} khoản nợ thành công!`,
+      data: settlements_with_payer
     };
   }
 
@@ -63,7 +44,7 @@ export class SettlementsService {
 
   async findSettlementsByID(id: string) {
     if(!id || !isUuid(id)) { throw new NotFoundException('ID khoản nợ không hợp lệ!'); }
-       const settlements_with_payer = await db.select({
+      const settlements_with_payer = await db.select({
       settlementId: settlements.settlementId,
       walletName: wallets.walletName,
       payerId: settlements.settlementPayerId,
@@ -81,26 +62,7 @@ export class SettlementsService {
     ))
 
     if(settlements_with_payer.length === 0) {   throw new NotFoundException('Không có khoản nợ nào!'); }
-
-    const result: any[] = [];
-    for (const item of settlements_with_payer) {
-      const [receiver] = await db.select({
-        receiverName: users.userFullName
-      }).from(walletMembers)
-      .innerJoin(users, eq(walletMembers.memberUserId, users.userId))
-      .where(eq(walletMembers.memberId, item.receiverId));
-
-      result.push({
-        settlementId: item.settlementId,
-        walletName: item.walletName,
-        payerName: item.payerName,
-        receiverName: receiver?.receiverName || 'Unknown',
-        settlementAmount: item.settlementAmount,
-        settlementDate: item.settlementDate,
-      });
-    }
-
-    return result;
+    return settlements_with_payer;
   }
 
   async getStats() {

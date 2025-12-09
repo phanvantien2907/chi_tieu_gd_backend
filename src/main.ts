@@ -15,8 +15,8 @@ async function bootstrap() {
    });
    app.setGlobalPrefix('api');
    const config = new DocumentBuilder()
-    .setTitle('API quản lý chi tiêu ngân sách cho Nhóm/Gia đình')
-    .setDescription('Đây là api cho hệ thống quản lý các chi tiêu về ngân sách cho nhóm và gia đình')
+    .setTitle('API quản lý chi tiêu cho Nhóm và Gia đình')
+    .setDescription('Đây là api cho hệ thống quản lý các chi tiêu cho nhóm và gia đình')
     .setVersion('1.0')
     .addBearerAuth({
       type: 'http',

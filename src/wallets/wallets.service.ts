@@ -68,13 +68,13 @@ export class WalletsService {
     return {status: HttpStatus.OK, msg: `Lấy danh sách ${find_list_wallets.length} ví thành công`, data: response};
    }
 
- async findOne(id: string) {
-   const get_wallet_by_id = await this.getWalletById(id);
+ async findOne(walletId: string) {
+   const get_wallet_by_id = await this.getWalletById(walletId);
    return {status: HttpStatus.OK, msg: 'Lấy thông tin ví thành công', data: get_wallet_by_id};
   }
 
-  async update(id: string, updateWalletDto: UpdateWalletDto) {
-    const get_wallet_by_id = await this.getWalletById(id);
+  async update(walletId: string, updateWalletDto: UpdateWalletDto) {
+    const get_wallet_by_id = await this.getWalletById(walletId);
     const invite_url = await this.getQrCode(get_wallet_by_id.walletId);
     const generator_qr_code = await QRCode.toDataURL(invite_url);
     const [update_wallet] = await db.update(wallets).set({
@@ -101,8 +101,8 @@ export class WalletsService {
     }}
   }
 
- async remove(id: string) {
-     const get_wallet_by_id = await this.getWalletById(id);
+ async remove(walletId: string) {
+     const get_wallet_by_id = await this.getWalletById(walletId);
       const delete_wallet = await db.update(wallets).set({
         walletIsDeleted: true,
         walletUpdatedAt: new Date().toISOString()
@@ -117,12 +117,12 @@ export class WalletsService {
     return get_user_by_name;
   }
 
-  async getQrCode(id: string) {
-    return `${process.env.SYSTEM_URL}/api/wallets/join/${id}`;
+  async getQrCode(walletId: string) {
+    return `${process.env.SYSTEM_URL}/api/wallets/join/${walletId}`;
   }
 
-  async getWalletById(id: string) {
-    if(!id || !isUuid(id)) { throw new BadRequestException('ID không hợp lệ'); }
+  async getWalletById(walletId: string) {
+    if(!walletId || !isUuid(walletId)) { throw new BadRequestException('ID không hợp lệ'); }
     const [get_wallet_by_id] = await db.select({
       walletId: wallets.walletId,
       userFullName: users.userFullName,
@@ -133,7 +133,7 @@ export class WalletsService {
       walletCreatedBy: wallets.walletCreatedBy
     }).from(wallets)
     .innerJoin(users, eq(wallets.walletCreatedBy, users.userId))
-    .where(and(eq(wallets.walletId, id), eq(wallets.walletIsDeleted, false)))
+    .where(and(eq(wallets.walletId, walletId), eq(wallets.walletIsDeleted, false)))
     .limit(1);
     if(!get_wallet_by_id) { throw new NotFoundException('Không tìm thấy ví'); }
     return {...get_wallet_by_id, walletQrCode: await this.getQrCode(get_wallet_by_id.walletId)};
