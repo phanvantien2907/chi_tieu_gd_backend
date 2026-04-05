@@ -44,6 +44,9 @@ importers:
       drizzle-orm:
         specifier: ^0.44.5
         version: 0.44.7(@types/pg@8.16.0)(pg@8.18.0)
+      jsonwebtoken:
+        specifier: ^9.0.3
+        version: 9.0.3
       module-alias:
         specifier: ^2.2.3
         version: 2.3.4
@@ -96,6 +99,9 @@ importers:
       '@types/jest':
         specifier: ^29.5.14
         version: 29.5.14
+      '@types/jsonwebtoken':
+        specifier: ^9.0.10
+        version: 9.0.10
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.11
@@ -126,9 +132,6 @@ importers:
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@22.19.11)(ts-node@10.9.2(@swc/core@1.15.11)(@types/node@22.19.11)(typescript@5.9.3))
-      jsonwebtoken:
-        specifier: ^9.0.3
-        version: 9.0.3
       prettier:
         specifier: ^3.4.2
         version: 3.8.1

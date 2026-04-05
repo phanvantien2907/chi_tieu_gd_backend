@@ -7,7 +7,7 @@ export const userRoleType = pgEnum("user_role_type", ['admin', 'client'])
 
 
 export const users = pgTable("users", {
-	userId: uuid("user_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	userId: uuid("user_id").default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	userFullName: text("user_full_name").notNull(),
 	userEmail: text("user_email").notNull(),
 	userHashedPassword: text("user_hashed_password").notNull(),
@@ -21,7 +21,7 @@ export const users = pgTable("users", {
 ]);
 
 export const wallets = pgTable("wallets", {
-	walletId: uuid("wallet_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	walletId: uuid("wallet_id").default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	walletName: text("wallet_name").notNull(),
 	walletDescription: text("wallet_description"),
 	walletCurrency: varchar("wallet_currency", { length: 3 }).default('VND').notNull(),
@@ -39,7 +39,7 @@ export const wallets = pgTable("wallets", {
 ]);
 
 export const walletMembers = pgTable("wallet_members", {
-	memberId: uuid("member_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	memberId: uuid("member_id").default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	memberWalletId: uuid("member_wallet_id").notNull(),
 	memberUserId: uuid("member_user_id").notNull(),
 	memberRole: text("member_role").default('member').notNull(),
@@ -60,7 +60,7 @@ export const walletMembers = pgTable("wallet_members", {
 ]);
 
 export const categories = pgTable("categories", {
-	categoryId: uuid("category_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	categoryId: uuid("category_id").default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	categoryWalletId: uuid("category_wallet_id"),
 	categoryName: text("category_name").default('null').notNull(),
 	categoryIcon: text("category_icon"),
@@ -76,7 +76,7 @@ export const categories = pgTable("categories", {
 ]);
 
 export const expenseSplits = pgTable("expense_splits", {
-	splitId: uuid("split_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	splitId: uuid("split_id").default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	splitExpenseId: uuid("split_expense_id").notNull(),
 	splitUserId: uuid("split_user_id").notNull(),
 	splitAmount: numeric("split_amount", { precision: 15, scale:  2 }).notNull(),
@@ -97,7 +97,7 @@ export const expenseSplits = pgTable("expense_splits", {
 ]);
 
 export const expenses = pgTable("expenses", {
-	expenseId: uuid("expense_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	expenseId: uuid("expense_id").default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	expenseWalletId: uuid("expense_wallet_id").notNull(),
 	expenseCategoryId: uuid("expense_category_id"),
 	expensePayerId: uuid("expense_payer_id").notNull(),
@@ -127,7 +127,7 @@ export const expenses = pgTable("expenses", {
 ]);
 
 export const walletTransactions = pgTable("wallet_transactions", {
-	transactionId: uuid("transaction_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	transactionId: uuid("transaction_id").default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	transactionWalletId: uuid("transaction_wallet_id").notNull(),
 	transactionUserId: uuid("transaction_user_id").notNull(),
 	transactionAmount: numeric("transaction_amount", { precision: 15, scale:  2 }).notNull(),
@@ -154,7 +154,7 @@ export const walletTransactions = pgTable("wallet_transactions", {
 ]);
 
 export const walletBalances = pgTable("wallet_balances", {
-	balanceId: uuid("balance_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	balanceId: uuid("balance_id").default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	balanceWalletId: uuid("balance_wallet_id").notNull(),
 	balanceUserId: uuid("balance_user_id").notNull(),
 	balanceAmount: numeric("balance_amount", { precision: 15, scale:  2 }).default('0').notNull(),
@@ -175,7 +175,7 @@ export const walletBalances = pgTable("wallet_balances", {
 ]);
 
 export const settlements = pgTable("settlements", {
-	settlementId: uuid("settlement_id").default(sql`uuid_generate_v4()`).primaryKey().notNull(),
+	settlementId: uuid("settlement_id").default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	settlementWalletId: uuid("settlement_wallet_id").notNull(),
 	settlementPayerId: uuid("settlement_payer_id").notNull(),
 	settlementReceiverId: uuid("settlement_receiver_id").notNull(),
