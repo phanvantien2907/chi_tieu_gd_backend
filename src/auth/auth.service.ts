@@ -12,17 +12,18 @@ import { hashPassword } from 'src/utilities/hash_pasword';
 @Injectable()
 export class AuthService {
   constructor(private readonly jwtService: JwtService) {}
+
   async register(@Body() registerData: RegisterDTO) {
     const exiting_users = await db.select({user_email: users.userEmail}).from(users)
-    .where(eq(users.userEmail, registerData.user_email)).limit(1);
+    .where(eq(users.userEmail, registerData.userEmail)).limit(1);
     if(!exiting_users) { throw new BadRequestException('Người dùng đã tồn tại'); }
-    const hashedPassword = await hashPassword(registerData.user_hashed_password);
+    const hashedPassword = await hashPassword(registerData.userHashedPassword);
     const create_user = await db.insert(users).values({
-      userEmail: registerData.user_email,
-      userFullName: registerData.user_full_name,
+      userEmail: registerData.userEmail,
+      userFullName: registerData.userFullName,
       userHashedPassword: hashedPassword,
       userIsDeleted: false,
-      userRole: 'client'
+      userRole:  registerData.userRole || 'client'
     }).returning({
       userId: users.userId,
       userEmail: users.userEmail,
@@ -38,9 +39,9 @@ export class AuthService {
   async login(@Body() loginData: LoginrDTO) {
     const exiting_users = await db.select(
     {userId: users.userId, userEmail: users.userEmail, userHashedPassword: users.userHashedPassword, userIsDeleted: users.userIsDeleted, userRole: users.userRole})
-    .from(users).where(eq(users.userEmail, loginData.user_email)).limit(1);
+    .from(users).where(eq(users.userEmail, loginData.userEmail)).limit(1);
      if(exiting_users.length == 0) { throw new NotFoundException('Người dùng không tồn tại!') }
-     const valid_password = await bcrypt.compare(loginData.user_hashed_password, exiting_users[0].userHashedPassword);
+     const valid_password = await bcrypt.compare(loginData.userHashedPassword, exiting_users[0].userHashedPassword);
      if(!valid_password) { throw new UnauthorizedException('Mật khẩu không đúng'); }
     if(exiting_users[0].userIsDeleted == true) { throw new BadRequestException('Tài khoản đã bị khóa'); }
     const token = await this.generatortoken(exiting_users[0].userId, exiting_users[0].userRole);
