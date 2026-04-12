@@ -1,0 +1,57 @@
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  UseFilters,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { CatchEverythingFilter } from 'src/exeption/http-exception.filter';
+import { GuardsGuard } from 'src/guard/guard.guard';
+import { RoleGuard } from 'src/guard/role.guard';
+import { AuthService } from './auth.service';
+import { RegisterDTO } from 'src/modules/auth/dto/register.dto';
+import { LoginrDTO } from 'src/modules/auth/dto/login.dto';
+import { RefreshTokenDTO } from 'src/modules/auth/dto/refresh-token.dto';
+
+@Controller('auth')
+@ApiTags('Authentication')
+@UseFilters(CatchEverythingFilter)
+@UseGuards(ThrottlerGuard)
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('register')
+  @ApiOperation({ summary: 'Tạo tài khoản mới' })
+  register(@Body() registerData: RegisterDTO) {
+    return this.authService.register(registerData);
+  }
+
+  @Post('login')
+  @ApiOperation({ summary: 'Đăng nhập vào hệ thống' })
+  login(@Body() loginData: LoginrDTO) {
+    return this.authService.login(loginData);
+  }
+
+  @Post('refresh-token')
+  @ApiBearerAuth('access-token')
+  @UseGuards(GuardsGuard)
+  @UseGuards(new RoleGuard(['admin', 'client']))
+  @ApiOperation({ summary: 'Làm mới token' })
+  refreshtoken(@Body() rftokenDTO: RefreshTokenDTO, @Req() req: Request) {
+    const user = req['user'];
+    return this.authService.refreshtoken(rftokenDTO.token, user.userRole);
+  }
+
+  @Post('logout')
+  @ApiOperation({ summary: 'Đăng xuất khỏi hệ thống' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(GuardsGuard)
+  @UseGuards(new RoleGuard(['admin', 'client']))
+  logout(@Req() req: Request) {
+    const user = req['user'];
+    return this.authService.logout(user.userId);
+  }
+}
