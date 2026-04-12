@@ -107,7 +107,7 @@ jobs:
 
             echo "▶ Pull code mới nhất từ nhánh main..."
             git fetch origin main
-            git reset --hard origin/main
+            git reset --hard origin/dev
 
             echo "▶ Ghi file .env từ secret..."
             cat > .env << 'ENVEOF'
