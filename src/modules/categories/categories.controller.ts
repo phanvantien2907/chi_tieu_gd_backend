@@ -7,6 +7,7 @@ import {
   Param,
   UseGuards,
   UseFilters,
+  Delete,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -78,7 +79,7 @@ export class CategoriesController {
     return this.categoriesService.update(id, updateCategoryDto);
   }
 
-  @Patch('delete/:id')
+  @Delete('delete/:id')
   @ApiOperation({
     summary: 'Xóa danh mục theo ID',
     description: 'Xóa một danh mục theo ID',
