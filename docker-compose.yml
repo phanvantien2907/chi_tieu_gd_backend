@@ -28,11 +28,17 @@ services:
     container_name: chi_tieu_gd_migrator
     env_file:
       - .env
-    environment:
-      POSTGRES_HOST: postgres
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-chi_tieu_gd_dev}
     # Chạy lệnh push schema của Drizzle
-    command: sh -c "pnpm run db:push"
+    command: >
+      sh -c "
+      if [ \"$NODE_ENV\" = 'production' ]; then
+      echo 'Running migration (PROD)';
+      pnpm run db:mi;
+      else
+      echo 'Running db push (DEV)';
+      pnpm run db:push;
+       fi
+      "
     depends_on:
       postgres:
         condition: service_healthy # Phải đợi DB khỏe mạnh mới được push
@@ -45,9 +51,6 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    environment:
-      POSTGRES_HOST: postgres
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-chi_tieu_gd_dev}
     ports:
       - "3000:3000"
     depends_on:
