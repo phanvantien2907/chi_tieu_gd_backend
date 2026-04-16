@@ -8,6 +8,7 @@ import {
   Res,
   UseFilters,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import { WalletsService } from './wallets.service';
 import { CreateWalletDto } from './dto/create-wallet.dto';
@@ -91,7 +92,7 @@ export class WalletsController {
     return this.walletsService.update(id, updateWalletDto);
   }
 
-  @Patch('delete/:id')
+  @Delete('delete/:id')
   @ApiOperation({
     summary: 'Xóa ví theo ID',
     description: 'Xóa một ví theo ID',
