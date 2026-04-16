@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   UseFilters,
+  Delete,
 } from '@nestjs/common';
 import { WalletMembersService } from './wallet_members.service';
 import { CreateWalletMemberDto } from './dto/create-wallet_member.dto';
@@ -75,7 +76,7 @@ export class WalletMembersController {
     );
   }
 
-  @Patch('delete/:id')
+  @Delete('delete/:id')
   @ApiOperation({
     summary: 'Xóa thành viên khỏi ví',
     description:
