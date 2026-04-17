@@ -109,6 +109,46 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
+            echo "▶ Ghi file .env.prod từ secret..."
+            cat > .env.prod << 'ENVEOF'
+            ${{ secrets.ENV_PROD }}
+            ENVEOF
+
+            echo "▶ Pull image base mới nhất..."
+            # Lệnh pull đứng riêng
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull postgres nginx 2>/dev/null || true
+
+            echo "▶ Tắt hệ thống cũ..."
+            # Lệnh down đứng riêng
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+
+            echo "▶ Build và khởi động lại các service..."
+            # Lệnh up đứng riêng
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build --remove-orphans
+
+            echo "▶ Dọn dẹp image cũ..."
+            docker image prune -f
+
+            echo "▶ Kiểm tra trạng thái..."
+            docker compose ps
+
+            echo "✅ Deploy thành công!"
+            set -e  # Dừng ngay nếu có lỗi
+
+            APP_DIR="${{ secrets.APP_DIR }}"
+            REPO_URL="git@github.com:${{ github.repository }}.git"
+
+            echo "▶ Chuẩn bị thư mục ứng dụng..."
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone "$REPO_URL" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+
+            echo "▶ Pull code mới nhất từ nhánh main..."
+            git fetch origin main
+            git reset --hard origin/main
+
             echo "▶ Ghi file .env từ secret..."
             cat > .env.prod << 'ENVEOF'
             ${{ secrets.ENV.PROD }}
