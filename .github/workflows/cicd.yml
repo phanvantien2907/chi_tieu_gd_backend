@@ -110,15 +110,16 @@ jobs:
             git reset --hard origin/main
 
             echo "▶ Ghi file .env từ secret..."
-            cat > .env << 'ENVEOF'
-            ${{ secrets.ENV_FILE_PRODUCTION }}
+            cat > .env.prod << 'ENVEOF'
+            ${{ secrets.ENV.PROD }}
             ENVEOF
 
             echo "▶ Pull image base mới nhất..."
-            docker compose pull postgres nginx 2>/dev/null || true
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build pull postgres nginx 2>/dev/null || true
 
             echo "▶ Build và khởi động lại các service..."
-            docker compose up -d --build --remove-orphans
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build down
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build --remove-orphans
 
             echo "▶ Dọn dẹp image cũ..."
             docker image prune -f
