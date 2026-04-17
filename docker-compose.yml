@@ -26,8 +26,6 @@ services:
       dockerfile: Dockerfile
       target: builder # Điểm ăn tiền: Chỉ build tới stage 'builder' để có sẵn drizzle-kit
     container_name: chi_tieu_gd_migrator
-    env_file:
-      - .env
     # Chạy lệnh push schema của Drizzle
     command: >
       sh -c "
@@ -49,8 +47,6 @@ services:
       dockerfile: Dockerfile
     container_name: chi_tieu_gd_api
     restart: unless-stopped
-    env_file:
-      - .env
     ports:
       - "3000:3000"
     depends_on:

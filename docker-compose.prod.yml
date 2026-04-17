@@ -1,8 +1,8 @@
 services:
-  api:
+  migrator:
     env_file:
       - .env.prod
 
-  migrator:
+  api:
     env_file:
       - .env.prod
